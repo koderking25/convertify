@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convertify — YouTube, but as a file you own</title>
+<meta name="description" content="Turn a YouTube link into an MP3, M4A, WAV, FLAC, AAC or MIDI. A small Mac app, and a plugin for every DAW that takes AU or VST3. Free and open source.">
+<meta property="og:title" content="Convertify 🎧">
+<meta property="og:description" content="Paste a link. Pick a flavour. Press the big green button. It even opens the folder for you.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="%232ebe7e"/><stop offset="1" stop-color="%230a5f3c"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(%23g)"/><g fill="%23f0fdf5"><rect x="14" y="22" width="5" height="12" rx="2.5"/><rect x="22" y="17" width="5" height="22" rx="2.5"/><rect x="37" y="18" width="5" height="21" rx="2.5"/><rect x="45" y="23" width="5" height="11" rx="2.5"/><rect x="29.5" y="13" width="5" height="25" rx="2.5"/><path d="M24 37 L40 37 L32 51 Z"/></g></svg>'>
+<style>
+  /* The app's own palette, to the hex. If this page and the app ever disagree about green,
+     the page is wrong. */
+  :root, :root[data-theme="dark"] {
+    --bg: #0c1310; --bg-2: #121b16; --card: #151f19; --ink: #e8f3ea; --muted: #90a497;
+    --line: #263429; --line-soft: #1d2922;
+    --accent: #5fd79b; --accent-2: #2f9f6d; --accent-3: #1d6646;
+    --accent-soft: #142d1e; --accent-ink: #05160d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3); --shadow-lift: 0 10px 34px rgba(0,0,0,.5);
+    --ring: 0 0 0 3px rgba(95,215,155,.25);
+  }
+  :root[data-theme="light"] {
+    --bg: #eaf3ec; --bg-2: #f6fbf7; --card: #ffffff; --ink: #112015; --muted: #5a6b5f;
+    --line: #dbe8dd; --line-soft: #e9f2eb;
+    --accent: #0f7a4d; --accent-2: #46c489; --accent-3: #8ae0b4;
+    --accent-soft: #e2f4e9; --accent-ink: #ffffff;
+    --shadow: 0 1px 2px rgba(10,40,25,.05), 0 8px 24px rgba(10,40,25,.06);
+    --shadow-lift: 0 2px 4px rgba(10,40,25,.06), 0 16px 38px rgba(10,40,25,.12);
+    --ring: 0 0 0 3px rgba(70,196,137,.28);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink); background: var(--bg);
+    background-image:
+      radial-gradient(1100px 620px at 10% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(860px 520px at 94% 2%, var(--bg-2), transparent 56%);
+    background-attachment: fixed;
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 22px; }
+
+  /* ---------- the bar at the top ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 20; backdrop-filter: saturate(160%) blur(14px);
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; gap: 14px; height: 62px; }
+  .mark { font-weight: 800; font-size: 20px; letter-spacing: -.03em; }
+  .mark .dot { color: var(--accent); }
+  nav .spacer { flex: 1; }
+  nav a.link { color: var(--muted); text-decoration: none; font-size: 14px; font-weight: 600; }
+  nav a.link:hover { color: var(--ink); }
+  .toggle {
+    border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    border-radius: 999px; width: 38px; height: 34px; cursor: pointer; font-size: 15px;
+    transition: transform .16s cubic-bezier(.2,.7,.3,1), border-color .16s, background .16s;
+  }
+  .toggle:hover { border-color: var(--accent-2); transform: rotate(-12deg) scale(1.07); }
+
+  /* ---------- hero ---------- */
+  header { padding: 74px 0 34px; text-align: center; }
+  h1 {
+    font-size: clamp(44px, 9vw, 86px); line-height: .98; margin: 0 0 16px; font-weight: 850;
+    letter-spacing: -.045em;
+    background: linear-gradient(118deg, var(--ink) 24%, var(--accent) 92%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  h1 .dot { -webkit-text-fill-color: var(--accent-2); color: var(--accent-2); }
+  .say { font-size: clamp(18px, 2.6vw, 23px); color: var(--muted); margin: 0 auto 8px; max-width: 640px; }
+  .say b { color: var(--ink); font-weight: 650; }
+  .quip {
+    display: inline-block; color: var(--accent); font-weight: 650; min-height: 1.6em;
+    font-size: 17px; margin-top: 4px;
+  }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 26px 0 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 9px; font: inherit; font-weight: 700;
+    padding: 14px 24px; border-radius: 14px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink); cursor: pointer; text-decoration: none;
+    transition: transform .16s cubic-bezier(.2,.7,.3,1), box-shadow .16s, border-color .16s, background .16s;
+  }
+  .btn:hover { border-color: var(--accent-2); transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+  .btn:active { transform: translateY(0) scale(.98); }
+  .btn.big {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: 0; color: var(--accent-ink); font-size: 17px; padding: 16px 30px;
+    box-shadow: 0 6px 22px rgba(47,159,109,.4);
+  }
+  .btn.big:hover { box-shadow: 0 12px 32px rgba(47,159,109,.5); }
+  .under { color: var(--muted); font-size: 13px; margin-top: 12px; }
+
+  /* ---------- the wave, the same one the app draws ---------- */
+  .stage {
+    position: relative; height: 128px; border-radius: 20px; overflow: hidden; margin: 34px 0 0;
+    background: linear-gradient(140deg, var(--accent-soft), var(--bg-2));
+    border: 1px solid var(--line); box-shadow: var(--shadow);
+  }
+  .stage canvas { width: 100%; height: 100%; display: block; }
+  .stage .tag {
+    position: absolute; left: 16px; top: 12px; font-size: 13px; font-weight: 650; color: var(--ink);
+  }
+  .stage .pct {
+    position: absolute; right: 16px; top: 12px; font-size: 13px; font-weight: 800;
+    color: var(--accent); font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- sections ---------- */
+  section { padding: 56px 0; }
+  h2 {
+    font-size: clamp(26px, 4vw, 36px); letter-spacing: -.03em; margin: 0 0 10px; font-weight: 800;
+  }
+  .lede { color: var(--muted); font-size: 17px; margin: 0 0 26px; max-width: 660px; }
+  .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 22px;
+    box-shadow: var(--shadow); transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s, border-color .18s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); border-color: var(--accent-2); }
+  .card h3 { margin: 0 0 7px; font-size: 19px; letter-spacing: -.02em; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card .em { font-size: 26px; display: block; margin-bottom: 10px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 0; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 999px; padding: 10px 17px; background: var(--bg-2);
+    font-size: 15px; font-weight: 650; display: inline-flex; gap: 8px; align-items: center;
+    transition: transform .16s cubic-bezier(.2,.7,.3,1), border-color .16s, background .16s, box-shadow .16s;
+    cursor: default;
+  }
+  .chip:hover { transform: translateY(-3px) rotate(-1.4deg); border-color: var(--accent-2);
+                background: var(--card); box-shadow: var(--ring); }
+  .chip .zip {
+    font-size: 10px; font-weight: 800; letter-spacing: .06em; color: var(--accent);
+    background: var(--accent-soft); padding: 3px 7px; border-radius: 999px;
+  }
+
+  /* ---------- downloads ---------- */
+  .grab { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .grab .card { display: flex; flex-direction: column; gap: 13px; }
+  .grab .card .grow { flex: 1; }
+  .where {
+    font-size: 12.5px; color: var(--muted); background: var(--bg-2); border: 1px solid var(--line-soft);
+    border-radius: 10px; padding: 9px 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow-wrap: anywhere;
+  }
+  .note {
+    border: 1px dashed var(--line); border-radius: 16px; padding: 16px 18px; margin-top: 18px;
+    color: var(--muted); font-size: 14.5px; background: var(--bg-2);
+  }
+  .note b { color: var(--ink); }
+
+  table.works { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; }
+  table.works td { padding: 11px 6px; border-bottom: 1px solid var(--line-soft); }
+  table.works td:last-child { text-align: right; color: var(--muted); white-space: nowrap; }
+  table.works tr:last-child td { border-bottom: 0; }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 34px 0 60px; color: var(--muted); font-size: 14px;
+  }
+  footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  footer a:hover { text-decoration: underline; }
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1); }
+  .reveal.here { opacity: 1; transform: none; }
+
+  @media (max-width: 560px) {
+    header { padding: 48px 0 24px; }
+    nav a.link { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+    .reveal { opacity: 1; transform: none; }
+  }
+  [hidden] { display: none !important; }
+</style>
+
+<nav>
+  <div class="wrap">
+    <span class="mark">Convertify<span class="dot">.</span></span>
+    <span class="spacer"></span>
+    <a class="link" href="#grab">Download</a>
+    <a class="link" href="#daw">In your DAW</a>
+    <a class="link" href="https://github.com/koderking25/convertify">Source</a>
+    <button class="toggle" id="theme" aria-label="Switch between dark and light">🌙</button>
+  </div>
+</nav>
+
+<header class="wrap">
+  <h1>Convertify<span class="dot">.</span></h1>
+  <p class="say">YouTube goes in. <b>A file you actually own</b> comes out. 🎧</p>
+  <p class="quip" id="quip">Paste a link, pick a flavour, press the big green button.</p>
+  <div class="cta">
+    <a class="btn big" href="#grab" id="get">Get Convertify <span>⬇️</span></a>
+    <a class="btn" href="#daw">It's a plugin too 🎛️</a>
+  </div>
+  <p class="under">Free. Open source. No account, no email, no "sign up to continue". 🙅</p>
+
+  <div class="stage">
+    <canvas id="viz"></canvas>
+    <span class="tag" id="viz-tag">Doing an impression of working 🎚️</span>
+    <span class="pct" id="viz-pct"></span>
+  </div>
+</header>
+
+<section class="wrap reveal">
+  <h2>Six flavours 🍧</h2>
+  <p class="lede">Pick whichever one your evening requires. MP3 if you want it to just play
+    anywhere. WAV if you are about to do something serious to it. MIDI if you want the actual
+    <em>notes</em>, which is a whole other kind of magic. 🪄</p>
+  <div class="chips">
+    <span class="chip">⚡ M4A <span class="zip">FASTEST</span></span>
+    <span class="chip">🎵 MP3</span>
+    <span class="chip">🌊 WAV</span>
+    <span class="chip">💎 FLAC</span>
+    <span class="chip">🎚️ AAC</span>
+    <span class="chip">🎹 MIDI <span class="zip">WINK</span></span>
+  </div>
+  <div class="note">
+    <b>About that MIDI.</b> 🎹 Convertify does not pretend it can hear music. It hands that job to
+    <a href="https://midify.tech" style="color:var(--accent)">Midify</a>, its older cousin, which
+    carries 750 MB of models and listens to a recording until it can write the notes down. Install
+    Midify and the MIDI button lights up on its own. Don't, and the other five still work perfectly.
+  </div>
+</section>
+
+<section class="wrap reveal">
+  <h2>Things it does that it absolutely did not have to 🎁</h2>
+  <div class="cards">
+    <div class="card">
+      <span class="em">📂</span>
+      <h3>Opens the folder</h3>
+      <p>The second it finishes, the Finder opens with your file already picked out. No hunting
+        through Downloads muttering "it was called <em>something</em>".</p>
+    </div>
+    <div class="card">
+      <span class="em">✂️</span>
+      <h3>Takes a slice</h3>
+      <p>Four hour jazz set, and you want the first five minutes? Say so. It fades out before the
+        cut, so it stops like a song rather than like a power failure.</p>
+    </div>
+    <div class="card">
+      <span class="em">🔁</span>
+      <h3>Remembers for a bit</h3>
+      <p>Same video, second format? It kept the audio. Measured: 5.6s for the first one, then
+        0.13s for the next. It is not downloading it again like some sort of animal.</p>
+    </div>
+    <div class="card">
+      <span class="em">🐌</span>
+      <h3>Survives bad wifi</h3>
+      <p>A stall gets noticed in 45 seconds, what already arrived gets kept, and the window tells
+        you your connection is dawdling instead of sitting there looking dead.</p>
+    </div>
+    <div class="card">
+      <span class="em">🗂️</span>
+      <h3>Keeps a history</h3>
+      <p>Everything you have ever converted, grouped by day, searchable, one click to show it in
+        the Finder or do it again in another flavour.</p>
+    </div>
+    <div class="card">
+      <span class="em">🔌</span>
+      <h3>Flash drives</h3>
+      <p>Tick a box and it copies onto your USB stick as well. Mildly ridiculous. Extremely useful
+        if you own a piano with a USB port.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap reveal" id="daw">
+  <h2>It's a plugin. In your DAW. 🎛️</h2>
+  <p class="lede">The same window, in a plugin slot, so getting a reference track does not mean
+    leaving the session. Audio passes straight through it untouched — this is not an effect
+    pretending to be useful on the way past, it is somewhere to put the thing you wanted anyway.</p>
+  <table class="works">
+    <tr><td>🍎 Logic Pro &amp; GarageBand</td><td>Audio Unit ✅</td></tr>
+    <tr><td>🎚️ Reaper</td><td>AU or VST3 ✅</td></tr>
+    <tr><td>🟠 Ableton Live</td><td>VST3 ✅</td></tr>
+    <tr><td>🎹 Studio One, Cubase, Bitwig</td><td>VST3 ✅</td></tr>
+    <tr><td>🟥 Pro Tools</td><td>AAX, which needs Avid's blessing 😔</td></tr>
+  </table>
+  <div class="note">
+    <b>Straight answer about tracks.</b> It cannot drop the file onto a track by itself, and
+    neither can anything else: a plugin is handed blocks of audio and the format has no idea the
+    host even <em>has</em> a track list. 🤷 Reaper is the exception, because it lets scripts in —
+    so there is <a href="https://github.com/koderking25/convertify/tree/main/daw/reaper"
+    style="color:var(--accent)">a Reaper script</a> that really does put it on a new track. In
+    Logic, drag it in from the folder that just opened. One drag. 🙂
+  </div>
+</section>
+
+<section class="wrap reveal" id="grab">
+  <h2>Right then. Downloads. ⬇️</h2>
+  <p class="lede">Mac only, for now. Apple silicon and Intel both. 🍏</p>
+  <div class="grab">
+    <div class="card">
+      <span class="em">🎧</span>
+      <h3>The app</h3>
+      <div class="grow"><p>Start here. The plugin is only a window — this is the bit that does
+        the actual work, and the plugin goes looking for it.</p></div>
+      <a class="btn big" href="https://github.com/koderking25/convertify/releases/latest/download/Convertify.dmg">Convertify.dmg ⬇️</a>
+      <div class="where">Drag it to Applications, like every other Mac app since 1999.</div>
+    </div>
+    <div class="card">
+      <span class="em">🎛️</span>
+      <h3>The plugins</h3>
+      <div class="grow"><p>An installer, so you do not have to know which of the two folders an
+        Audio Unit lives in. It puts both where your DAWs look.</p></div>
+      <a class="btn big" href="https://github.com/koderking25/convertify/releases/latest/download/Convertify-plugins.pkg">Convertify-plugins.pkg ⬇️</a>
+      <div class="where">/Library/Audio/Plug-Ins/Components<br>/Library/Audio/Plug-Ins/VST3</div>
+    </div>
+    <div class="card">
+      <span class="em">🧰</span>
+      <h3>Or do it yourself</h3>
+      <div class="grow"><p>Both plugin bundles in a zip, for people who would rather drag things
+        into folders personally. We see you. 🫡</p></div>
+      <a class="btn" href="https://github.com/koderking25/convertify/releases/latest/download/Convertify-plugins.zip">Convertify-plugins.zip ⬇️</a>
+      <div class="where">~/Library/Audio/Plug-Ins/Components<br>~/Library/Audio/Plug-Ins/VST3</div>
+    </div>
+  </div>
+  <div class="note">
+    <b>Two things nobody enjoys being surprised by.</b> 🫣 First, macOS will say it is from an
+    unidentified developer, because signing up to be an identified one costs £79 a year. Right-click,
+    choose Open, and tell it you meant it. Second, restart your DAW after installing the plugins:
+    they only go looking for new ones when they start, so one that was already open will insist
+    nothing happened.
+  </div>
+</section>
+
+<section class="wrap reveal">
+  <h2>It's open source, obviously 🧑‍💻</h2>
+  <p class="lede">Every line of it, including the bits where the comments admit what went wrong
+    the first time. Take it, read it, fork it, find a bug and tell us about it. 🐛</p>
+  <div class="cta" style="justify-content:flex-start">
+    <a class="btn big" href="https://github.com/koderking25/convertify">github.com/koderking25/convertify ⭐</a>
+    <a class="btn" href="https://github.com/koderking25/convertify/releases">All releases 📦</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p id="footline">Converting MIDI? Try <a href="https://midify.tech">Midify</a>, the cousin that
+      actually listens. 🎹</p>
+    <p style="opacity:.75">Made on a Mac that kept running out of storage. 💾 ·
+      <a href="https://github.com/koderking25/convertify">Source</a> ·
+      <a href="https://midify.tech">Midify</a></p>
+  </div>
+</footer>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const calm = matchMedia("(prefers-reduced-motion: reduce)");
+// Declared up here on purpose: changing the theme throws the remembered colours away, and the
+// theme is set before the wave's own section runs. Left further down, that read happened before
+// this line existed and the whole script stopped on it, so nothing drew at all.
+let ink = null;
+
+/* ---------- light or dark, remembered ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+function wear(mode) {
+  document.documentElement.setAttribute("data-theme", mode);
+  $("#theme").textContent = mode === "dark" ? "🌙" : "☀️";
+  store.set("theme", mode);
+  ink = null;                       // the wave asks for its colours again
+}
+wear(store.get("theme", "dark"));   // dark by default, like the app looks at night
+$("#theme").onclick = () =>
+  wear(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+
+/* ---------- the wave: the app's own, down to the two sliding sines ---------- */
+const viz = $("#viz"), vctx = viz.getContext("2d");
+let phase = 0, shown = 0, target = 0.62, running = false;
+
+function colours() {
+  if (!ink) {
+    const css = getComputedStyle(document.documentElement);
+    ink = { accent: css.getPropertyValue("--accent").trim(),
+            accent2: css.getPropertyValue("--accent-2").trim() };
+  }
+  return ink;
+}
+
+function paintWave() {
+  const want = Math.round(viz.clientWidth * devicePixelRatio);
+  const tall = Math.round(128 * devicePixelRatio);
+  if (viz.width !== want || viz.height !== tall) { viz.width = want; viz.height = tall; }
+  const w = viz.width, h = viz.height, bars = Math.max(28, Math.round(w / (9 * devicePixelRatio)));
+  vctx.clearRect(0, 0, w, h);
+  const { accent, accent2 } = colours();
+  const gap = 5 * devicePixelRatio, bw = Math.max(2 * devicePixelRatio, w / bars - gap);
+  for (let i = 0; i < bars; i++) {
+    const ratio = i / bars;
+    const swing = Math.sin(phase + ratio * 7) * 0.5 + Math.sin(phase * 1.7 + ratio * 13) * 0.3;
+    const amp = calm.matches ? 0.45 : 0.45 + swing * 0.42;
+    const bh = Math.max(3 * devicePixelRatio, Math.abs(amp) * h * 0.78);
+    const done = ratio <= shown;
+    vctx.fillStyle = done ? accent : accent2;
+    vctx.globalAlpha = done ? 1 : 0.28;
+    vctx.beginPath();
+    vctx.roundRect(i * (bw + gap), (h - bh) / 2, bw, bh, Math.min(bw / 2, 3 * devicePixelRatio));
+    vctx.fill();
+  }
+  vctx.globalAlpha = 1;
+  $("#viz-pct").textContent = Math.round(shown * 100) + "%";
+}
+
+function tick() {
+  // It drifts up and down for ever, because a bar that sits at 62% looks like it has crashed.
+  target += (Math.random() - 0.45) * 0.03;
+  target = Math.min(0.97, Math.max(0.25, target));
+  shown += (target - shown) * 0.045;
+  phase += calm.matches ? 0 : 0.055;
+  paintWave();
+  if (!document.hidden) requestAnimationFrame(tick); else running = false;
+}
+function wake() { if (!running && !document.hidden) { running = true; requestAnimationFrame(tick); } }
+document.addEventListener("visibilitychange", wake);
+addEventListener("resize", () => { if (!running) paintWave(); });
+wake();
+
+/* ---------- quips, because a static tagline is a wasted opportunity ---------- */
+const QUIPS = [
+  "Paste a link, pick a flavour, press the big green button.",
+  "Teaching the internet to hand it over. 📼",
+  "Politely asking YouTube for the audio. 🙇",
+  "Shaking the bits until music falls out. 🫨",
+  "Rounding up the ones and zeros. 🧲",
+  "Persuading ffmpeg to hurry up. 🏃",
+  "Now with 100% fewer pop-ups about premium. 🚫",
+  "It opens the folder for you. Revolutionary, apparently. 📂",
+];
+let q = 0;
+if (!calm.matches) {
+  setInterval(() => {
+    q = (q + 1) % QUIPS.length;
+    const el = $("#quip");
+    el.style.opacity = 0;
+    setTimeout(() => { el.textContent = QUIPS[q]; el.style.opacity = 1; }, 240);
+  }, 4200);
+  $("#quip").style.transition = "opacity .24s ease";
+}
+
+const STAGE_WORDS = [
+  "Doing an impression of working 🎚️", "Downloading · 2.1 of 4.5 MB · 1.4 MB/s",
+  "Making the FLAC 💎", "Copying it across ⚡", "Asking Midify to listen to it 🎹",
+  "Done ✅ — opening the folder 📂",
+];
+let s = 0;
+if (!calm.matches) setInterval(() => { s = (s + 1) % STAGE_WORDS.length;
+  $("#viz-tag").textContent = STAGE_WORDS[s]; }, 3400);
+
+/* ---------- the scroll the app does when you press the button ---------- */
+function takeThemThere(id) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.scrollIntoView({ behavior: calm.matches ? "auto" : "smooth", block: "center" });
+}
+for (const a of document.querySelectorAll('a[href^="#"]')) {
+  a.addEventListener("click", (e) => { e.preventDefault(); takeThemThere(a.getAttribute("href").slice(1)); });
+}
+
+/* ---------- things arrive as you reach them ---------- */
+if ("IntersectionObserver" in window && !calm.matches) {
+  const watcher = new IntersectionObserver((rows) => {
+    for (const r of rows) if (r.isIntersecting) { r.target.classList.add("here"); watcher.unobserve(r.target); }
+  }, { rootMargin: "-40px" });
+  document.querySelectorAll(".reveal").forEach(el => watcher.observe(el));
+} else {
+  document.querySelectorAll(".reveal").forEach(el => el.classList.add("here"));
+}
+</script>
+</html>
