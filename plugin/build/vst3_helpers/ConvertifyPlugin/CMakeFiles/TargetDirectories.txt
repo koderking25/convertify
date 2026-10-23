@@ -1,0 +1,3 @@
+/Users/neilmekouar/convertify/plugin/build/vst3_helpers/ConvertifyPlugin/CMakeFiles/vst3_helper.dir
+/Users/neilmekouar/convertify/plugin/build/vst3_helpers/ConvertifyPlugin/CMakeFiles/edit_cache.dir
+/Users/neilmekouar/convertify/plugin/build/vst3_helpers/ConvertifyPlugin/CMakeFiles/rebuild_cache.dir

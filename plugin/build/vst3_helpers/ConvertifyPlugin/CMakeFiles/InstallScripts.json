@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/neilmekouar/convertify/plugin/build/vst3_helpers/ConvertifyPlugin/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

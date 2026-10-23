@@ -1,0 +1,48 @@
+{
+  "Name": "Convertify",
+  "Version": "1.4.1",
+  "Factory Info": {
+    "Vendor": "Convertify",
+    "URL": "",
+    "E-Mail": "",
+    "Flags": {
+      "Unicode": true,
+      "Classes Discardable": false,
+      "Component Non Discardable": false,
+    },
+  },
+  "Classes": [
+    {
+      "CID": "ABCDEF019182FAEB4376667943767431",
+      "Category": "Audio Module Class",
+      "Name": "Convertify",
+      "Vendor": "Convertify",
+      "Version": "1.4.1",
+      "SDKVersion": "VST 3.8.0",
+      "Sub Categories": [
+        "Fx",
+        "Tools",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+    {
+      "CID": "ABCDEF011234ABCD4376667943767431",
+      "Category": "Component Controller Class",
+      "Name": "Convertify",
+      "Vendor": "Convertify",
+      "Version": "1.4.1",
+      "SDKVersion": "VST 3.8.0",
+      "Sub Categories": [
+        "Fx",
+        "Tools",
+      ],
+      "Class Flags": 0,
+      "Cardinality": 2147483647,
+      "Snapshots": [
+      ],
+    },
+  ],
+}
