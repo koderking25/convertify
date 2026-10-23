@@ -1,5 +1,8 @@
 # Convertify
 
+**[koderking25.github.io/convertify](https://koderking25.github.io/convertify/)** — downloads, and
+what it does, with rather more jokes than this file.
+
 A small Mac app that turns a YouTube link into a file you can keep: MP3, M4A, WAV, FLAC, AAC,
 or MIDI. Search by name or paste a link, pick a flavour, press the green button. It saves to
 Downloads unless you tell it otherwise, and it opens the folder with your file already picked
@@ -9,6 +12,12 @@ Convertify is Midify's cousin. Midify listens to music and writes the notes down
 just gets you the audio. MIDI is the one thing it cannot do alone: it hands that job to Midify
 if Midify is installed, because the listening takes 750 MB of models that Convertify has no
 business carrying.
+
+## As a plugin
+
+It is also an AU and a VST3, so it opens in a plugin slot in Logic, Reaper, Ableton and the rest.
+`plugin/` builds it, `mac/make_installer.py` makes the installer that puts both where DAWs look,
+and `daw/reaper` is a script that puts the finished file straight onto a Reaper track.
 
 ## Running it from the source
 
