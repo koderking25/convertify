@@ -1,0 +1,6 @@
+yt-dlp[default]
+fastapi
+uvicorn
+pyobjc-framework-Cocoa
+pyobjc-framework-WebKit
+certifi

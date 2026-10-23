@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+mac/build/
+mac/convertify-icon.png
+dist/
+.venv/
+venv/
+.DS_Store
