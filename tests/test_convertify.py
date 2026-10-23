@@ -6,6 +6,7 @@ Nothing here touches YouTube. The download is stood in for, so what is tested is
 behaviour: naming, where files go, what it refuses, and that the finished file is shown to you.
 """
 import os
+import re
 import shutil
 import time
 import subprocess
@@ -197,6 +198,19 @@ def main():
               out.exists() and out.stat().st_size > 0)
     finally:
         engine.aac_encoder = was
+
+    print("\nThe update button")
+    # It called updater.UPDATER.install(), which does not exist, so every press answered 500.
+    # This checks the engine only ever asks the updater for things the updater actually has.
+    import updater as _u
+    asked = set()
+    for line in (ROOT / "convertify" / "engine.py").read_text().splitlines():
+        for m in re.finditer(r"updater\.UPDATER\.(\w+)", line):
+            asked.add(m.group(1))
+    missing = sorted(a for a in asked if not hasattr(_u.UPDATER, a))
+    check("every updater call the engine makes exists", not missing, f"missing: {missing}")
+    check("it asks for the ones that do the work",
+          {"snapshot", "check", "start_install"} <= asked, str(sorted(asked)))
 
     print("\nHistory")
     rows = engine.history()

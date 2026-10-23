@@ -750,7 +750,15 @@ def update_install():
                                  "page.")
     if snap.get("state") != "available":
         raise HTTPException(400, "Convertify is already the newest one. ✅")
-    return updater.UPDATER.install()
+    if any(j.status in ("queued", "downloading", "converting") for j in JOBS.values()):
+        raise HTTPException(400, "Let the conversion finish first, then update.")
+    # start_install, not install. It was calling a method that does not exist, so pressing
+    # Update now answered 500 and nothing happened, every time, in every version so far.
+    try:
+        updater.UPDATER.start_install()
+    except updater.UpdateError as e:
+        raise HTTPException(400, str(e))
+    return updater.UPDATER.snapshot()
 
 
 def keep_downloader_current():
